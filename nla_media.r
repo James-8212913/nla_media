@@ -1,10 +1,22 @@
 #------------------------------------------------------------------------------#
 #                                                                              #
-#    NLA Text Analysis on Secutiry and Policy                                                                ####
+#    NLP Text Analysis on Security and Policy                                                                ####
 #                                                                              #
 #------------------------------------------------------------------------------#
 
-#------------------------------------------------------------------------------#
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+packages <- c("tidyverse", "tidymodels", "tidytext", "httr", "jsonlite", "rvest", "robotstxt", "RSelenium", "seleniumPipes", "forcats", "lubridate")
+
+ipak(packages)
+
+
+y#------------------------------------------------------------------------------#
 # Load Packages                                                                  ####
 #------------------------------------------------------------------------------#
 
@@ -49,7 +61,7 @@ for (i in 0:172){
   # loop to get the article key items from the teaser pages
   counter = i
   print(counter)
-  Sys.sleep(2)
+  Sys.sleep(3)
   pg = paste0(base_url,"&page=",i) %>% read_html()
   urls <- as_tibble(html_nodes(pg, css = '.right-content h2 a') %>% html_attr('href'))
   date <- as_tibble(html_nodes(pg, css = '.right-content .date') %>% html_text())
@@ -64,8 +76,6 @@ for (i in 0:172){
 # bind the elements together into a tibble
 lowy_articles_teaser <- bind_cols(lowy_dates, lowy_titles, lowy_intro, lowy_urls) 
 
-
-
 # tidy the tibble 
 lowy_art_teaser <- lowy_articles_teaser %>% rename(date = value...1,
                                 title = value...2,
@@ -75,7 +85,9 @@ lowy_art_teaser <- lowy_articles_teaser %>% rename(date = value...1,
     date = dmy(date)
   )
 
+lowy_art_teaser 
 
+write_csv(lowy_art_teaser, file = "data/lowy_art_teaser.csv")
 
 #------------------------------------------------------------------------------#
 # Scrape Data from site using Rselenium                                                                   ####
@@ -132,7 +144,7 @@ authour_tib
 rd$server$stop()
 
 #------------------------------------------------------------------------------#
-# Gblogs                                                                ####
+# G-blogs                                                                ####
 #------------------------------------------------------------------------------#
 
 # set the remote driver and load it - firefox browser should open up here
@@ -155,9 +167,11 @@ intro_count <- lowy_art_teaser %>% unnest_tokens(
   anti_join(stop_words) %>% 
   count(word, sort = TRUE)
 
+intro_count
+
 # Basic word count
 intro_count %>% 
-  filter(n>900) %>% 
+  filter(n>30) %>% 
   ggplot(aes(fct_reorder(word, n), n)) +
   geom_col() +
   coord_flip()
@@ -192,7 +206,7 @@ intro_bigram <- intro_bigram %>%
 
 intro_bigram %>% 
   count(bigram, sort = TRUE) %>% 
-  filter(n>35) %>% 
+  filter(n>3) %>% 
   ggplot(aes(fct_reorder(bigram, n), n)) +
   geom_col() +
   coord_flip()
